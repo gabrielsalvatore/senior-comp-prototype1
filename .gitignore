@@ -1,0 +1,14 @@
+# CE survey data (public, download from BLS; see README)
+intrvw*/
+diary*/
+*.zip
+*.csv
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# macOS
+.DS_Store
