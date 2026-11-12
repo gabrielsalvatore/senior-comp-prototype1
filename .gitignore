@@ -25,3 +25,4 @@ venv/
 
 # Keep the CPI input data in the repository
 !data/*.csv
+!benchmarks/results/*.csv
