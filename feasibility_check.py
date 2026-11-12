@@ -16,11 +16,22 @@ from pathlib import Path
 
 import pandas as pd
 
-REQUIRED_FMLI = (
-    ["NEWID", "FINLWT21", "FINCBTXM", "FAM_SIZE", "AGE_REF", "REGION", "BLS_URBN",
-     "SEX_REF", "FAM_TYPE", "EDUC_REF", "REF_RACE", "HISP_REF", "CUTENURE", "NO_EARNR"]
-    + [f"WTREP{i:02d}" for i in range(1, 45)]
-)
+REQUIRED_FMLI = [
+    "NEWID",
+    "FINLWT21",
+    "FINCBTXM",
+    "FAM_SIZE",
+    "AGE_REF",
+    "REGION",
+    "BLS_URBN",
+    "SEX_REF",
+    "FAM_TYPE",
+    "EDUC_REF",
+    "REF_RACE",
+    "HISP_REF",
+    "CUTENURE",
+    "NO_EARNR",
+] + [f"WTREP{i:02d}" for i in range(1, 45)]
 REQUIRED_MTBI = ["NEWID", "UCC", "COST", "REF_MO", "REF_YR"]
 HOUSING_HINTS = ("RENTEQ", "RENDWE", "RNTEQ")  # rental-equivalence candidates
 
@@ -100,8 +111,7 @@ def main():
         cov = spend.loc[mapped, "COST"].sum() / spend["COST"].sum()
         print("\n== 4. Concordance coverage ==")
         print(f"  share of spending ($) whose UCC maps to a CPI item: {cov:.1%}")
-        top = (spend.loc[~mapped].groupby("UCC")["COST"].sum()
-               .sort_values(ascending=False).head(10))
+        top = spend.loc[~mapped].groupby("UCC")["COST"].sum().sort_values(ascending=False).head(10)
         print("  largest unmapped UCCs by spending:")
         print(top.to_string())
 

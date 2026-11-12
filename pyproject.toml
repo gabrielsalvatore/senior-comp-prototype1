@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pie"
+dynamic = ["version"]
+description = "Household price indexes from BLS Consumer Expenditure Survey microdata"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.26", "pandas>=2.1", "scipy>=1.11"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "hypothesis>=6.100",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pandas-stubs>=2.1",
+    "scipy-stubs>=1.14",
+]
+
+[project.scripts]
+pie = "pie.cli:main"
+
+[tool.setuptools]
+packages = ["pie"]
+
+[tool.setuptools.dynamic]
+version = { attr = "pie.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "tests"]
+addopts = "-ra"
+# Apple's Accelerate BLAS raises spurious matmul warnings on M-series Macs.
+filterwarnings = ["ignore:.*encountered in matmul:RuntimeWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "NPY", "PD"]
+ignore = [
+    "N803", "N806",  # matrix names like W, R, A follow the math notation
+    "PD010",         # .pivot is intended: it rejects duplicates, .pivot_table would average them
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pie"]
+known-local-folder = ["conftest"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["pie", "benchmarks"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_untyped_defs = true
+no_implicit_optional = true

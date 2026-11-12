@@ -6,7 +6,9 @@ Usage:
     python3 -m pie path/to/intrvw23 --cpi data/cpi_u.csv
 """
 
+import sys
+
 from pie.cli import main
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

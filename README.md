@@ -2,13 +2,13 @@
 
 Computational artifact for Gabriel Saccoccio's combined Computer Science and Economics senior comprehensive project at Allegheny College (CMPSC 600, Fall 2026).
 
-The prototype calculates a personal inflation rate for every household in the U.S. Bureau of Labor Statistics Consumer Expenditure Survey (CE). It then compares groups of households, with confidence intervals from the survey's replicate weights, and benchmarks three algorithms that compute the same numbers.
+The prototype calculates a personal inflation rate for every household in the U.S. Bureau of Labor Statistics Consumer Expenditure Survey (CE). It then compares groups of households, with confidence intervals from the survey's replicate weights, and compares equivalent algorithms for computing the same numbers at realistic scale, with a proof of when group indexes can be computed aggregate first.
 
 ## Research question
 
 How did the inflation experienced by U.S. households differ across socioeconomic characteristics, and did those differences change from before COVID-19 to after it?
 
-## What `pie_demo.py` does
+## What the report does
 
 1. Loads the CE Interview household files (`fmli*.csv`) for one survey year.
 2. Builds each household's spending shares over 16 CPI categories. Owner housing is valued as rental equivalence, as the CPI does.
@@ -18,22 +18,29 @@ How did the inflation experienced by U.S. households differ across socioeconomic
 
 4. Compares groups (urban/rural, income quintile, household type, age, housing tenure). It reports 95% confidence intervals from the 44 BLS replicate weights (balanced repeated replication).
 5. Breaks the rural–urban gap into contributions by category.
-6. Times three algorithms that produce identical results:
+6. Times equivalent algorithms on the CE weights:
 
 | Algorithm | Idea | Time complexity |
 | --- | --- | --- |
-| A1 | Naive Python loops | O(H · I · T) |
-| A2 | Dense matrix product `W @ R` (vectorized) | O(H · I · T), much lower constant |
-| A4 | Aggregate first: `(A @ W) @ R` (matrix-chain reordering) | O(H · I + G · I · T) |
+| A1 | Naive Python loops | O(H · I · T), interpreted |
+| A2 | Dense matrix product `W @ R` | O(H · I · T), BLAS (same arithmetic as A1; a constant-factor gap) |
+| A3 | Household first, `A @ (W @ R)` | O(H · I · T + H · T) |
+| A4d | Aggregate first with a dense G × H matrix `A` | O(G · H · I + G · I · T) |
+| A4s | Aggregate first with sparse `A` (H nonzeros) | O(H · I + G · I · T) |
+| A4g | Aggregate first, one BLAS product per group | O(H · I + G · I · T) |
 
-Here H is households, I is items, T is months and G is groups.
+   Here H is households, I is items, T is months (or columns of a sensitivity grid) and G is groups.
+
+7. Computes every group estimate and its BRR standard error as one product with a stacked (45·G) × H matrix, and compares the two multiplication orders.
+8. Measures the gap between the democratic mean of household indexes and the aggregate-share index for nonlinear (geometric, harmonic) indexes, with the bounds from `docs/theory.md`.
 
 ## Setup
 
 Requires Python 3.10+.
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt     # to run the report
+pip install -e ".[dev]"             # to develop: adds pytest, hypothesis, ruff, mypy
 ```
 
 ### Get the data
@@ -57,6 +64,29 @@ python3 feasibility_check.py intrvw23            # check that every needed varia
 
 If a CE variable the pipeline needs is missing from the files, the program stops
 and lists the missing variables instead of treating them as zero.
+
+## Develop
+
+```bash
+pytest                                   # unit and property-based tests
+ruff check . && ruff format --check .    # lint and formatting
+mypy                                     # type checks
+```
+
+GitHub Actions runs all of these on every push and pull request (`.github/workflows/ci.yml`).
+
+## Benchmarks
+
+```bash
+python3 benchmarks/run_benchmarks.py                                  # synthetic prices
+python3 benchmarks/run_benchmarks.py --cpi-series cu.data.0.Current   # real CPI series
+```
+
+The script varies H, I, T, G and the number of sensitivity columns S. For each point it reports mean ± sd over repeated runs and log-log slopes against the predicted exponents, and writes everything to `benchmarks/results/`. Real CPI series come from the BLS flat file `cu.data.0.Current` (download from the [BLS CPI database](https://download.bls.gov/pub/time.series/cu/)). `docs/benchmarks.md` explains the results.
+
+## Theory
+
+`docs/theory.md` proves when a group price index can be computed aggregate first. Laspeyres, Paasche and Törnqvist are all generalized means; aggregate-share indexes always commute with aggregation, but the democratic mean of household indexes does so only for Laspeyres. It bounds the error otherwise (Jensen's inequality) and measures it in the 2023 CE data.
 
 ## CPI data
 
@@ -90,20 +120,32 @@ Over December 2019 → December 2023 the rural–urban gap disappears (20.93% vs
 - U.S. Bureau of Labor Statistics, [Consumer Expenditure Surveys Public-Use Microdata](https://www.bls.gov/cex/pumd_data.htm).
 - U.S. Bureau of Labor Statistics, CPI-U category indexes (U.S. city average, not seasonally adjusted), retrieved via [FRED](https://fred.stlouisfed.org/).
 
+## Versioning
+
+Releases follow [semantic versioning](https://semver.org/) and are tagged `vMAJOR.MINOR.PATCH`; `CHANGELOG.md` lists the changes in each. Per the project contract, the finalized prototype for December 10, 2026 is released as 1.0.0 or later.
+
+## Use of AI tools
+
+Claude Code (Anthropic, Claude Opus 5.5) assisted in November 2026 with: restructuring the code into the `pie` package; writing the test suite, linting, type-checking and CI configuration; the sparse and grouped aggregation code and the benchmark script; and drafting the proofs in `docs/theory.md`. The author reviewed the changes, checked that the report's results on the 2023 CE data are unchanged, and is responsible for the content. Details are in the AI-use record in the research notebook.
+
 ## Repository contents
 
 - `pie/`: the prototype, split into modules:
   - `config.py`: categories, CE variable names, survey constants
   - `cpi.py`: loads `data/cpi_u.csv` and computes price relatives
+  - `cpi_series.py`: reads monthly CPI series from a BLS flat file
   - `load.py`: reads the CE Interview files, builds spending by category, and raises an error on missing variables
   - `weights.py`: household spending shares and CPI-style aggregate weights
-  - `indexes.py`: household inflation (Laspeyres) and weighted quantiles
+  - `indexes.py`: household Laspeyres inflation; Laspeyres, Paasche, Fisher and Törnqvist formulas; weighted quantiles
   - `groups.py`: income quintile, area, household type, age and tenure groups
-  - `variance.py`: standard errors from the 44 BRR replicate weights
-  - `aggregate.py`: group averaging and the basket-effect decomposition
-  - `benchmark.py`: timing of the equivalent algorithms
+  - `variance.py`: standard errors from the 44 BRR replicate weights, looped or stacked
+  - `aggregate.py`: sparse, dense and grouped averaging; stacked replicate matrices; basket effect
+  - `theory.py`: generalized-mean indexes, Jensen gap and its bounds
+  - `benchmark.py`: the algorithms and timing helpers
   - `cli.py`: the command-line report (`python3 -m pie`)
+- `benchmarks/`: scaling experiments (`run_benchmarks.py`) and their results
+- `tests/`: pytest suite
 - `data/cpi_u.csv`: CPI-U category price levels.
+- `docs/proposal.md`: the project proposal; `docs/theory.md`: proofs; `docs/benchmarks.md`: benchmark interpretation.
 - `pie_demo.py`: backward-compatible entry point that runs `pie.cli`.
 - `feasibility_check.py`: confirms the CE files contain every variable the project needs.
-- `docs/proposal.md`: the project proposal.
