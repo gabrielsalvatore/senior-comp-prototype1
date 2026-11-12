@@ -23,6 +23,7 @@ from pie.cpi import headline_inflation, load_cpi, relatives
 from pie.groups import label_groups
 from pie.indexes import laspeyres_inflation, weighted_quantile
 from pie.load import MissingCEVariableError, load_households
+from pie.theory import gap_table
 from pie.variance import brr_from_stacked, brr_mean
 from pie.weights import group_mean_shares, plutocratic_weights, spending_shares
 
@@ -167,6 +168,22 @@ def main(argv: list[str] | None = None) -> int:
             f"  Flop-count crossover: S ~ K*I/(I+K) = "
             f"{benchmark.crossover_columns(N_REP + 1, W.shape[1]):.1f}"
         )
+
+    hr("6. Aggregate first vs democratic mean: Jensen gap (peak year, pp of inflation)")
+    print("  gap = mean of household indexes - index of the group's mean shares; zero for")
+    print("  Laspeyres, >= 0 for convex phi. Bounds: (1/2) min/max phi'' x Var (docs/theory.md)")
+    for kind in ("geometric", "harmonic"):
+        print(f"  -- {kind} mean of relatives (base-period shares)")
+        print(f"  {'Group':<26}{'gap':>8}{'lower':>8}{'upper':>8}{'2nd order':>11}")
+        for dim in ("Area", "Income quintile"):
+            table = gap_table(W, rel_peak, groups[dim], w, kind)
+            for level, row in table.iterrows():
+                if row["n"] < MIN_GROUP_SIZE:
+                    continue
+                print(
+                    f"  {str(level):<26}{row['gap'] * 100:8.3f}{row['lower_bound'] * 100:8.3f}"
+                    f"{row['upper_bound'] * 100:8.3f}{row['second_order'] * 100:11.3f}"
+                )
 
     hr()
     print("  Prototype: 2023 spending shares, 16 categories, national prices.")

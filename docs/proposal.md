@@ -199,7 +199,7 @@ That framing lets the thesis compare algorithms that produce identical numbers a
 | A4 Aggregate first | Collapse W to G group rows, then multiply (associativity) | O(H · I + G · I · T) | Huge saving for group results; linear indexes only |
 | A5 Incremental chaining | Update the index by one month instead of recomputing | O(nnz(W)) per new month | Suits monthly updates; must manage chain drift |
 
-**Link to theory.** A4 is the matrix-chain ordering problem: (A·W)·R and A·(W·R) give the same answer at different costs. It works for linear indexes (Laspeyres, Paasche) but not for Fisher or Törnqvist, which are geometric. The thesis proves which formulas permit it and measures the gap.
+**Link to theory.** A4 is the matrix-chain ordering problem: (A·W)·R and A·(W·R) give the same answer at different costs. *(Revised November 2026 after reader feedback.)* Laspeyres, Paasche and Törnqvist are all generalized means, P = φ(Σᵢ sᵢ g(rᵢ)). A group index built from the group's aggregate shares can always be computed aggregate first. The democratic mean of household indexes can be computed that way only when φ is affine (Laspeyres). For the others the error is a Jensen gap, bounded by ½·min/max φ″·Var. See `docs/theory.md` for the proofs and the measured gap.
 
 **Uncertainty.** Standard errors use BLS's balanced repeated replication: recompute every estimate with each of the 44 replicate weights. Naively that is 45× the work. With A4 each replicate only changes the aggregation step, so the cost grows far more slowly. A bootstrap is compared as an alternative.
 
