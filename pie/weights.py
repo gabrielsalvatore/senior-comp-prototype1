@@ -20,7 +20,9 @@ def spending_shares(hh: pd.DataFrame, hh_spend: pd.DataFrame) -> tuple[pd.DataFr
     return hh, shares
 
 
-def plutocratic_weights(W: np.ndarray, survey_weight: np.ndarray, total_spend: np.ndarray) -> np.ndarray:
+def plutocratic_weights(
+    W: np.ndarray, survey_weight: np.ndarray, total_spend: np.ndarray
+) -> np.ndarray:
     """Aggregate expenditure shares, CPI style: households weighted by survey weight x spending."""
     agg = (W * (survey_weight * total_spend)[:, None]).sum(axis=0)
     return agg / agg.sum()

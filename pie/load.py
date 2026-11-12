@@ -28,6 +28,9 @@ from pie.config import (
 class MissingCEVariableError(KeyError):
     """Raised when the FMLI files lack variables the pipeline depends on."""
 
+    def __str__(self) -> str:  # KeyError would otherwise wrap the message in quotes
+        return str(self.args[0])
+
 
 def required_columns() -> list[str]:
     """Every FMLI column the pipeline reads."""

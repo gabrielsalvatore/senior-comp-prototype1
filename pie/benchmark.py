@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import time
-from typing import Callable, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
 import numpy as np
 
@@ -33,8 +34,10 @@ def naive_loops(W: np.ndarray, R: np.ndarray) -> list[list[float]]:
     """A1: pure Python triple loop."""
     Wl, Rl = W.tolist(), R.tolist()
     n_items, n_months = len(Rl), len(Rl[0])
-    return [[sum(Wl[h][i] * Rl[i][m] for i in range(n_items)) - 1 for m in range(n_months)]
-            for h in range(len(Wl))]
+    return [
+        [sum(Wl[h][i] * Rl[i][m] for i in range(n_items)) - 1 for m in range(n_months)]
+        for h in range(len(Wl))
+    ]
 
 
 def run(W: np.ndarray, labels: np.ndarray, survey_weight: np.ndarray, n_months: int = 12) -> dict:
@@ -52,7 +55,9 @@ def run(W: np.ndarray, labels: np.ndarray, survey_weight: np.ndarray, n_months: 
     g2 = A @ out2
 
     return {
-        "a1": a1, "a2": a2, "a4": a4,
+        "a1": a1,
+        "a2": a2,
+        "a4": a4,
         "diff_a1_a2": float(np.abs(np.array(out1) - out2).max()),
         "diff_a4_a2": float(np.abs(g4 - g2).max()),
     }

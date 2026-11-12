@@ -1,3 +1,5 @@
+import sys
+
 from pie.cli import main
 
-main()
+sys.exit(main())

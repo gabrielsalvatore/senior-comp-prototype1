@@ -16,8 +16,8 @@ def brr_mean(values: np.ndarray, hh: pd.DataFrame, mask: np.ndarray) -> tuple[fl
     """
     v = values[mask]
     est = float(np.average(v, weights=hh.loc[mask, "FINLWT21"]))
-    reps = np.array([
-        np.average(v, weights=hh.loc[mask, col].clip(lower=0) + 1e-12) for col in REP_COLS
-    ])
+    reps = np.array(
+        [np.average(v, weights=hh.loc[mask, col].clip(lower=0) + 1e-12) for col in REP_COLS]
+    )
     se = float(np.sqrt(((reps - est) ** 2).sum() / N_REP))
     return est, se

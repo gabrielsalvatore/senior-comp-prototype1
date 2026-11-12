@@ -1,5 +1,5 @@
 # CE survey data (public, download from BLS; see README)
-intrvw*/
+intrvw*
 diary*/
 *.zip
 *.csv
@@ -8,7 +8,17 @@ diary*/
 __pycache__/
 *.pyc
 .venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+*.egg-info/
 venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+*.egg-info/
 
 # macOS
 .DS_Store

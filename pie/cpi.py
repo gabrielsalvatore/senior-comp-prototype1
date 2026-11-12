@@ -13,11 +13,15 @@ from pie.config import DEFAULT_CPI_FILE
 def load_cpi(path: str | Path = DEFAULT_CPI_FILE) -> pd.DataFrame:
     """Read a CPI table: one row per category, one column per date (YYYY-MM).
 
-    Raises ValueError if the file has no category column or no date columns.
+    Raises ValueError if the file has no category column, repeats a category,
+    or has no date columns.
     """
     cpi = pd.read_csv(path)
     if "category" not in cpi.columns:
         raise ValueError(f"{path}: missing required 'category' column")
+    if cpi["category"].duplicated().any():
+        dupes = sorted(cpi.loc[cpi["category"].duplicated(), "category"])
+        raise ValueError(f"{path}: duplicate categories: {dupes}")
     cpi = cpi.set_index("category")
     if not date_columns(cpi):
         raise ValueError(f"{path}: no date columns (expected names like 2021-06)")
@@ -40,10 +44,13 @@ def relatives(cpi: pd.DataFrame, categories: list[str], start: str, end: str) ->
     for d in (start, end):
         if d not in cpi.columns:
             raise KeyError(f"CPI table has no column for date {d}")
-    sub = cpi.loc[categories]
+    sub = cpi.loc[categories, [start, end]]
+    if sub.isna().to_numpy().any():
+        gaps = sorted(sub.index[sub.isna().any(axis=1)])
+        raise ValueError(f"CPI table has no value between {start} and {end} for: {gaps}")
     return (sub[end] / sub[start]).to_numpy(dtype=float)
 
 
 def headline_inflation(cpi: pd.DataFrame, start: str, end: str, row: str = "All items") -> float:
     """Official inflation over the window, from the all-items row."""
-    return float(cpi.loc[row, end] / cpi.loc[row, start] - 1)
+    return float(relatives(cpi, [row], start, end)[0] - 1)
