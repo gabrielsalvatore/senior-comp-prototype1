@@ -47,10 +47,22 @@ The survey files are public but large (about 60 MB per year), so they are not in
 ## Run
 
 ```bash
-python3 pie_demo.py intrvw23           # full demo
-python3 pie_demo.py intrvw23 --quick   # skip the timing section
-python3 feasibility_check.py intrvw23  # check that every needed variable exists
+python3 -m pie intrvw23                          # full demo
+python3 -m pie intrvw23 --quick                  # skip the timing section
+python3 -m pie intrvw23 --cpi data/cpi_u.csv     # use a different CPI file
+python3 feasibility_check.py intrvw23            # check that every needed variable exists
 ```
+
+`python3 pie_demo.py intrvw23` still works and runs the same report.
+
+If a CE variable the pipeline needs is missing from the files, the program stops
+and lists the missing variables instead of treating them as zero.
+
+## CPI data
+
+Category price levels live in `data/cpi_u.csv`: one row per CPI category, with
+its BLS series ID and one column per date (`YYYY-MM`). To change the time windows
+or add categories, edit that file instead of the code.
 
 ## Example results (2023 CE, June 2021 → June 2022)
 
@@ -80,6 +92,18 @@ Over December 2019 → December 2023 the rural–urban gap disappears (20.93% vs
 
 ## Repository contents
 
-- `pie_demo.py`: the prototype.
+- `pie/`: the prototype, split into modules:
+  - `config.py`: categories, CE variable names, survey constants
+  - `cpi.py`: loads `data/cpi_u.csv` and computes price relatives
+  - `load.py`: reads the CE Interview files, builds spending by category, and raises an error on missing variables
+  - `weights.py`: household spending shares and CPI-style aggregate weights
+  - `indexes.py`: household inflation (Laspeyres) and weighted quantiles
+  - `groups.py`: income quintile, area, household type, age and tenure groups
+  - `variance.py`: standard errors from the 44 BRR replicate weights
+  - `aggregate.py`: group averaging and the basket-effect decomposition
+  - `benchmark.py`: timing of the equivalent algorithms
+  - `cli.py`: the command-line report (`python3 -m pie`)
+- `data/cpi_u.csv`: CPI-U category price levels.
+- `pie_demo.py`: backward-compatible entry point that runs `pie.cli`.
 - `feasibility_check.py`: confirms the CE files contain every variable the project needs.
 - `docs/proposal.md`: the project proposal.
